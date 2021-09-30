@@ -1,0 +1,49 @@
+﻿options:
+  source: &source cloud:focal-wallaby
+machines:
+  '0':
+    constraints: mem=8G
+  '1':
+    constraints: mem=8G
+  '2':
+    constraints: mem=8G
+  '3':
+    constraints: mem=8G
+series: focal
+applications:
+  ceph-mon:
+    charm: 'cs:ceph-mon'
+    num_units: 3
+    options:
+      expected-osd-count: 9
+      source: *source
+    to:
+      - lxd:0
+      - lxd:1
+      - lxd:2
+  ceph-osd:
+    charm: 'cs:ceph-osd'
+    num_units: 3
+    storage:
+      osd-devices: 3,20G
+    options:
+      source: *source
+    to:
+      - 0
+      - 1
+      - 2
+  rgw-us-east-two:
+    charm: 'cs:ceph-radosgw'
+    num_units: 1
+    options:
+      realm: replicated
+      zone: us-east-two
+      zonegroup: us
+      source: *source
+    to:
+      - 3
+relations:
+  - - 'ceph-mon:osd'
+    - 'ceph-osd:mon'
+  - - 'rgw-us-east-two:mon'
+    - 'ceph-mon:radosgw'
